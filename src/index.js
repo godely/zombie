@@ -821,8 +821,12 @@ class Browser extends EventEmitter {
   //
   // Returns this.
   select(selector, value) {
-    const option = this._findOption(selector, value);
-    this.selectOption(option);
+    try {
+      const option = this._findOption(selector, value);
+      this.selectOption(option);
+    } catch (e) {
+      return this;
+    }
     return this;
   }
 
@@ -853,8 +857,12 @@ class Browser extends EventEmitter {
   //
   // Returns this.
   unselect(selector, value) {
-    const option = this._findOption(selector, value);
-    this.unselectOption(option);
+    try {
+      const option = this._findOption(selector, value);
+      this.unselectOption(option);
+    } catch (e) {
+      return this;
+    }
     return this;
   }
 
