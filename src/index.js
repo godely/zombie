@@ -664,7 +664,11 @@ class Browser extends EventEmitter {
   // attribute) or the text value of a label associated with that field (case sensitive, but ignores leading/trailing
   // spaces).
   field(selector) {
-    assert(this.document && this.document.documentElement, 'No open window with an HTML document');
+    try {
+      assert(this.document && this.document.documentElement, 'No open window with an HTML document');
+    } catch (e) {
+      return null;
+    }
     // If the field has already been queried, return itself
     if (selector instanceof DOM.Element)
       return selector;
@@ -719,9 +723,13 @@ class Browser extends EventEmitter {
   // Returns this.
   fill(selector, value) {
     const field = this.field(selector);
-    assert(field && (field.tagName === 'TEXTAREA' || (field.tagName === 'INPUT')), `No INPUT matching '${selector}'`);
-    assert(!field.disabled, 'This INPUT field is disabled');
-    assert(!field.readonly, 'This INPUT field is readonly');
+
+    if (!(field && (field.tagName === 'TEXTAREA' || (field.tagName === 'INPUT')))) {
+      return this;
+    }
+    if (field.disabled || field.readonly) {
+      return this;
+    }
 
     // Switch focus to field, change value and emit the input event (HTML5)
     field.focus();
@@ -734,9 +742,9 @@ class Browser extends EventEmitter {
 
   _setCheckbox(selector, value) {
     const field = this.field(selector);
-    assert(field && field.tagName === 'INPUT' && field.type === 'checkbox', `No checkbox INPUT matching '${selector}'`);
-    assert(!field.disabled, 'This INPUT field is disabled');
-    assert(!field.readonly, 'This INPUT field is readonly');
+
+    if (!(field && field.tagName === 'INPUT' && field.type === 'checkbox')) return this;
+    if (field.disabled || field.readonly) return this;
 
     if (field.checked ^ value)
       field.click();
@@ -774,7 +782,9 @@ class Browser extends EventEmitter {
   // Returns this.
   choose(selector) {
     const field = this.field(selector) || this.field(`input[type=radio][value=\'${escape(selector)}\']`);
-    assert(field && field.tagName === 'INPUT' && field.type === 'radio', `No radio INPUT matching '${selector}'`);
+    //\\'
+
+    if (!(field && field.tagName === 'INPUT' && field.type === 'radio')) return this;
 
     field.click();
     return this;
@@ -782,9 +792,9 @@ class Browser extends EventEmitter {
 
   _findOption(selector, value) {
     const field = this.field(selector);
-    assert(field && field.tagName === 'SELECT', `No SELECT matching '${selector}'`);
-    assert(!field.disabled, 'This SELECT field is disabled');
-    assert(!field.readonly, 'This SELECT field is readonly');
+
+    if (!(field && field.tagName === 'SELECT')) return this;
+    if (field.disabled || field.readonly) return this;
 
     const options = Array.from(field.options);
     for (let option of options) {
@@ -859,7 +869,7 @@ class Browser extends EventEmitter {
     const option = this.query(selector);
     if (option && option.selected) {
       const select = this.xpath('./ancestor::select', option).iterateNext();
-      assert(select.multiple, 'Cannot unselect in single select');
+      if (!select.multiple) return this;
       option.selected = false;
       select.focus();
       this.fire(select, 'change', false);
@@ -874,7 +884,7 @@ class Browser extends EventEmitter {
   // Returns this.
   attach(selector, filename) {
     const field = this.field(selector);
-    assert(field && field.tagName === 'INPUT' && field.type === 'file', `No file INPUT matching '${selector}'`);
+    if(!(field && field.tagName === 'INPUT' && field.type === 'file')) return this;
 
     if (filename) {
       const stat = File.statSync(filename);
@@ -898,7 +908,8 @@ class Browser extends EventEmitter {
   //
   // selector - CSS selector, button name or text of BUTTON element
   button(selector) {
-    assert(this.document && this.document.documentElement, 'No open window with an HTML document');
+    if (!this.document || !this.document.documentElement) return null;
+
     // If the button has already been queried, return itself
     if (selector instanceof DOM.Element)
       return selector;
@@ -935,8 +946,9 @@ class Browser extends EventEmitter {
   // callback - Called with two arguments: null and browser
   pressButton(selector, callback) {
     const button = this.button(selector);
-    assert(button, `No BUTTON '${selector}'`);
-    assert(!button.disabled, 'This button is disabled');
+    if (!button || button.disabled) {
+      return callback(new Error('No button or disabled.'));
+    }
     button.focus();
     return this.fire(button, 'click', callback);
   }
