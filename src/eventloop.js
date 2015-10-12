@@ -415,7 +415,6 @@ module.exports = class EventLoop extends EventEmitter {
     function ontick(next) {
       // No point in waiting that long
       if (next >= timeoutOn) {
-        console.log("stooor >> " + waitDuration);
         timeout();
         return;
       }

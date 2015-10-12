@@ -1355,11 +1355,10 @@ class Browser extends EventEmitter {
   static language = 'en-US'
 
   // Default time to wait (visit, wait, etc).
-  static waitDuration = '5s'
+  static waitDuration = '15s'
 
   // Indicates whether or not to validate and execute JavaScript, default true.
   static runScripts = true
-
 
   // -- Internal properties --
 
